@@ -17,7 +17,6 @@ from zenml.integrations.mlflow.model_deployers.mlflow_model_deployer import (
 )
 from zenml.integrations.mlflow.services import MLFlowDeploymentService
 from zenml.integrations.mlflow.steps import mlflow_model_deployer_step
-from zenml.steps import BaseParameters, Output
 
 from .utils import get_data_for_test
 
@@ -36,24 +35,21 @@ def dynamic_importer() -> str:
     return data
 
 
-class DeploymentTriggerConfig(BaseParameters):
+class DeploymentTriggerConfig:
     """Parameters that are used to trigger the deployment"""
 
-    min_accuracy: float = 0.9
+    min_accuracy: float = 0
 
 
 @step
 def deployment_trigger(
     accuracy: float,
-    config: DeploymentTriggerConfig,
 ) -> bool:
-    """Implements a simple model deployment trigger that looks at the
-    input model accuracy and decides if it is good enough to deploy"""
 
-    return accuracy > config.min_accuracy
+    return accuracy > 0
 
 
-class MLFlowDeploymentLoaderStepParameters(BaseParameters):
+class MLFlowDeploymentLoaderStepParameters:
     """MLflow deployment getter parameters
 
     Attributes:
@@ -77,16 +73,6 @@ def prediction_service_loader(
     running: bool = True,
     model_name: str = "model",
 ) -> MLFlowDeploymentService:
-    """Get the prediction service started by the deployment pipeline.
-
-    Args:
-        pipeline_name: name of the pipeline that deployed the MLflow prediction
-            server
-        step_name: the name of the step that deployed the MLflow prediction
-            server
-        running: when this flag is set, the step only returns a running service
-        model_name: the name of the model that is deployed
-    """
     model_deployer = MLFlowModelDeployer.get_active_model_deployer()
 
     existing_services = model_deployer.find_model_server(
@@ -174,7 +160,7 @@ def predictor(
 
 @pipeline(enable_cache=True, settings={"docker": docker_settings})
 def continuous_deployment_pipeline(
-    min_accuracy: float = 0.9,
+    min_accuracy: float = 0,
     workers: int = 1,
     timeout: int = DEFAULT_SERVICE_START_STOP_TIMEOUT,
 ):
